@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Security.Cryptography.X509Certificates;
 
 namespace MarkdownData;
 
@@ -104,6 +105,48 @@ public class Table: IEnumerable<Row>
     }
 
     public IEnumerable<Column> Columns { get { return _columns.Where((x) => !String.IsNullOrEmpty(x.Name)); } }
+
+    public void Sort(string column)
+    {
+        _rows.Sort((a,b) => String.Compare(a.GetValue(column), b.GetValue(column)));
+    }
+
+    public void ArrangeColumns(IEnumerable<string> columnNames, string fillValue)
+    {
+        var updatedColumns = new List<Column>();
+
+        foreach (var name in columnNames)
+        {
+            var match = _columns.FirstOrDefault((x) => String.Equals(name, x.Name));
+            if (match != null)
+            {
+                updatedColumns.Add(match);
+            }
+            else
+            {
+                updatedColumns.Add(new Column() {
+                    Name = name,
+                    Alignment = ColumnAlignment.Unspecified,
+                    Width = Math.Max(Math.Max(5, name.Length), fillValue.Length)
+                });
+
+                foreach (var entry in _rows)
+                {
+                    entry.SetValue(name, fillValue);
+                }
+            }
+        }
+
+        foreach (var column in _columns)
+        {
+            if (!updatedColumns.Contains(column))
+            {
+                updatedColumns.Add(column);
+            }
+        }
+
+        _columns = updatedColumns;
+    }
 
     public IEnumerator<Row> GetEnumerator()
     {
